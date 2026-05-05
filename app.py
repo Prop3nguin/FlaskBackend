@@ -26,14 +26,14 @@ def home():
 def get_lexicon():
     return jsonify(lexicon)
 
-@app.route("/add", methods=["GET", "POST"])
+@app.route("/add", methods=["POST"])
 def add_word():
     data = request.json
     lexicon[data["english"]] = data["conlang"]
     save_lexicon()
     return jsonify({"status": "ok"})
 
-@app.route("/translate", methods=["GET", "POST"])
+@app.route("/translate", methods=["POST"])
 def translate():
     text = request.json["text"].lower().split()
     result = [lexicon.get(w, f"[{w}]") for w in text]
