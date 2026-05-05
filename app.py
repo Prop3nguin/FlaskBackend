@@ -1,19 +1,24 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import json
+import os
 
 app = Flask(__name__)
 CORS(app)
 
+# Get the directory where this script is located
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+LEXICON_PATH = os.path.join(BASE_DIR, "lexicon.json")
+
 def load_lexicon():
     try:
-        with open("lexicon.json", "r") as f:
+        with open(LEXICON_PATH, "r") as f:
             return json.load(f)
     except:
         return {}
 
 def save_lexicon():
-    with open("lexicon.json", "w") as f:
+    with open(LEXICON_PATH, "w") as f:
         json.dump(lexicon, f)
 
 lexicon = load_lexicon()
