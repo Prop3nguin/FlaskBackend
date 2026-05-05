@@ -44,6 +44,13 @@ def translate():
     result = [lexicon.get(w, f"[{w}]") for w in text]
     return jsonify({"result": " ".join(result)})
 
+@app.route("/debug")
+def debug():
+    return {
+        "lexicon": lexicon,
+        "routes": str(app.url_map)
+    }
+
 if __name__ == "__main__":
     app.run(debug=True)
 
