@@ -86,6 +86,18 @@ def translate():
 
     return jsonify({"result": " ".join(result)})
 
+@app.route("/delete", methods=["POST"])
+def delete_word():
+    data = request.json
+    word = Word.query.filter_by(english=data["english"].lower()).first()
+
+    if word:
+        db.session.delete(word)
+        db.session.commit()
+        return jsonify({"status": "deleted"})
+
+    return jsonify({"error": "not found"}), 404
+
 # -----------------------------
 # LOCAL RUN
 # -----------------------------
