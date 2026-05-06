@@ -1,7 +1,19 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
+from functools import wraps
 import os
+
+API_KEY = os.getenv("API_KEY")
+
+def require_api_key(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        key = request.headers.get("x-api-key")
+        if key != API_KEY:
+            return jsonify({"error": "Unauthorized"}), 403
+        return f(*args, **kwargs)
+    return decorated
 
 app = Flask(__name__)
 CORS(app)
@@ -49,6 +61,7 @@ def get_lexicon():
 
 # Add or update word
 @app.route("/add", methods=["POST"])
+@require_api_key
 def add_word():
     data = request.json
 
@@ -87,6 +100,7 @@ def translate():
     return jsonify({"result": " ".join(result)})
 
 @app.route("/delete", methods=["POST"])
+@require_api_key
 def delete_word():
     data = request.json
     word = Word.query.filter_by(english=data["english"].lower()).first()
