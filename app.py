@@ -21,10 +21,7 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # Restrict CORS to your GitHub Pages site
 CORS(
-    app,
-    resources={r"/*": {"origins": "*"}},
-    allow_headers=["Content-Type"],
-    methods=["GET", "POST", "OPTIONS"]
+    app
 )
 
 db = SQLAlchemy(app)
@@ -60,6 +57,10 @@ def require_admin(f):
 @app.route("/")
 def home():
     return "API is running"
+
+@app.rout("/test")
+def test():
+    return "Test Works"
 
 @app.route("/lexicon", methods=["GET"])
 def get_lexicon():
