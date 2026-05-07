@@ -6,6 +6,20 @@ import os
 app = Flask(__name__)
 
 @app.after_request
+def add_cors_headers(response):
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "*"
+    return response
+
+@app.route("/")
+def home():
+    return "WORKING"
+
+if __name__ == "__main__":
+    app.run(debug=True)
+"""
+@app.after_request
 def after_request(response):
     response.headers.add(
         "Access-Control-Allow-Origin",
@@ -72,7 +86,7 @@ def require_admin(f):
 # -----------------------------
 @app.route("/")
 def home():
-    return "API is running v0.15"
+    return "API is running v0.17"
 
 @app.route("/", methods=["OPTIONS"])
 def options():
@@ -165,3 +179,4 @@ def delete_word(id):
 # -----------------------------
 if __name__ == "__main__":
     app.run(debug=True)
+"""
