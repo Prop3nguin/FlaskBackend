@@ -58,7 +58,7 @@ def require_admin(f):
 def home():
     return "API is running"
 
-@app.rout("/test")
+@app.route("/test")
 def test():
     return "Test Works"
 
