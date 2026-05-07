@@ -1,35 +1,32 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, session, redirect, render_template
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from functools import wraps
 import os
 
-API_KEY = os.getenv("API_KEY")
-
-def require_api_key(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        key = request.headers.get("x-api-key")
-        if key != API_KEY:
-            return jsonify({"error": "Unauthorized"}), 403
-        return f(*args, **kwargs)
-    return decorated
-
 app = Flask(__name__)
-CORS(app)
 
 # -----------------------------
-# DATABASE CONFIG (Render-safe)
+# CONFIG
 # -----------------------------
+app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
+
+# Fix Render postgres URL
 uri = os.getenv("DATABASE_URL")
-
 if uri and uri.startswith("postgres://"):
     uri = uri.replace("postgres://", "postgresql://", 1)
 
 app.config["SQLALCHEMY_DATABASE_URI"] = uri
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
+# Restrict CORS to your GitHub Pages site
+CORS(app, origins=[
+    "https://prop3nguin.github.io"
+])
+
 db = SQLAlchemy(app)
+
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
 
 # -----------------------------
 # DATABASE MODEL
@@ -39,54 +36,36 @@ class Word(db.Model):
     english = db.Column(db.String(100), unique=True, nullable=False)
     conlang = db.Column(db.String(100), nullable=False)
 
-# Create tables (runs once safely)
+# Create tables
 with app.app_context():
     db.create_all()
 
 # -----------------------------
-# ROUTES
+# AUTH DECORATOR
 # -----------------------------
+def require_admin(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if not session.get("admin"):
+            return redirect("/login")
+        return f(*args, **kwargs)
+    return wrapper
 
-# Health check
+# -----------------------------
+# PUBLIC ROUTES (API)
+# -----------------------------
 @app.route("/")
 def home():
     return "API is running"
 
-# Get full lexicon
 @app.route("/lexicon", methods=["GET"])
 def get_lexicon():
     words = Word.query.all()
-    result = {w.english: w.conlang for w in words}
-    return jsonify(result)
+    return jsonify({w.english: w.conlang for w in words})
 
-# Add or update word
-@app.route("/add", methods=["POST"])
-@require_api_key
-def add_word():
-    data = request.json
-
-    if not data or "english" not in data or "conlang" not in data:
-        return jsonify({"error": "Invalid input"}), 400
-
-    english = data["english"].lower()
-    conlang = data["conlang"]
-
-    existing = Word.query.filter_by(english=english).first()
-
-    if existing:
-        existing.conlang = conlang
-    else:
-        new_word = Word(english=english, conlang=conlang)
-        db.session.add(new_word)
-
-    db.session.commit()
-    return jsonify({"status": "ok"})
-
-# Translate text
 @app.route("/translate", methods=["POST"])
 def translate():
     data = request.json
-
     if not data or "text" not in data:
         return jsonify({"error": "Invalid input"}), 400
 
@@ -99,21 +78,66 @@ def translate():
 
     return jsonify({"result": " ".join(result)})
 
-@app.route("/delete", methods=["POST"])
-@require_api_key
-def delete_word():
-    data = request.json
-    word = Word.query.filter_by(english=data["english"].lower()).first()
+# -----------------------------
+# LOGIN / AUTH
+# -----------------------------
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        password = request.form.get("password")
 
+        if password == ADMIN_PASSWORD:
+            session["admin"] = True
+            return redirect("/admin")
+
+        return "Wrong password"
+
+    return render_template("login.html")
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect("/login")
+
+# -----------------------------
+# ADMIN PANEL
+# -----------------------------
+@app.route("/admin")
+@require_admin
+def admin_panel():
+    words = Word.query.all()
+    return render_template("admin.html", words=words)
+
+@app.route("/admin/add", methods=["POST"])
+@require_admin
+def admin_add():
+    english = request.form.get("english", "").lower()
+    conlang = request.form.get("conlang", "")
+
+    if not english or not conlang:
+        return redirect("/admin")
+
+    existing = Word.query.filter_by(english=english).first()
+
+    if existing:
+        existing.conlang = conlang
+    else:
+        db.session.add(Word(english=english, conlang=conlang))
+
+    db.session.commit()
+    return redirect("/admin")
+
+@app.route("/admin/delete/<int:id>", methods=["POST"])
+@require_admin
+def delete_word(id):
+    word = Word.query.get(id)
     if word:
         db.session.delete(word)
         db.session.commit()
-        return jsonify({"status": "deleted"})
-
-    return jsonify({"error": "not found"}), 404
+    return redirect("/admin")
 
 # -----------------------------
-# LOCAL RUN
+# RUN LOCAL
 # -----------------------------
 if __name__ == "__main__":
     app.run(debug=True)

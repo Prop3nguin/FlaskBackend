@@ -1,0 +1,20 @@
+<h2>Lexicon</h2>
+
+<form method="POST" action="/admin/add">
+  <input name="english" placeholder="English">
+  <input name="conlang" placeholder="Conlang">
+  <button type="submit">Add</button>
+</form>
+
+<ul>
+  {% for word in words %}
+    <li>
+      {{ word.english }} → {{ word.conlang }}
+      <form method="POST" action="/admin/delete/{{ word.id }}" style="display:inline;">
+        <button type="submit">Delete</button>
+      </form>
+    </li>
+  {% endfor %}
+</ul>
+
+<a href="/logout">Logout</a>
