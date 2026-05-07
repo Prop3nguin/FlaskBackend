@@ -21,9 +21,10 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # Restrict CORS to your GitHub Pages site
 CORS(
-    app, 
-    recorces={r"/*": {"origins": "*"}},
-    supports_credentials=True
+    app,
+    resources={r"/*": {"origins": "*"}},
+    allow_headers=["Content-Type"],
+    methods=["GET", "POST", "OPTIONS"]
 )
 
 db = SQLAlchemy(app)
