@@ -22,7 +22,8 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 # Restrict CORS to your GitHub Pages site
 CORS(
     app, 
-    recorces={r"/*": {"origins": "https://prop3nguin.github.io"}}
+    recorces={r"/*": {"origins": "*"}},
+    supports_credentials=True
 )
 
 db = SQLAlchemy(app)
@@ -64,7 +65,7 @@ def get_lexicon():
     words = Word.query.all()
     return jsonify({w.english: w.conlang for w in words})
 
-@app.route("/translate", methods=["POST"])
+@app.route("/translate", methods=["POST", "OPTIONS"])
 def translate():
     data = request.json
     if not data or "text" not in data:
@@ -82,7 +83,7 @@ def translate():
 # -----------------------------
 # LOGIN / AUTH
 # -----------------------------
-@app.route("/login", methods=["GET", "POST"])
+@app.route("/login", methods=["GET", "POST", "OPTIONS"])
 def login():
     if request.method == "POST":
         password = request.form.get("password")
@@ -109,7 +110,7 @@ def admin_panel():
     words = Word.query.all()
     return render_template("admin.html", words=words)
 
-@app.route("/admin/add", methods=["POST"])
+@app.route("/admin/add", methods=["POST", "OPTIONS"])
 @require_admin
 def admin_add():
     english = request.form.get("english", "").lower()
@@ -128,7 +129,7 @@ def admin_add():
     db.session.commit()
     return redirect("/admin")
 
-@app.route("/admin/delete/<int:id>", methods=["POST"])
+@app.route("/admin/delete/<int:id>", methods=["POST", "OPTIONS"])
 @require_admin
 def delete_word(id):
     word = Word.query.get(id)
