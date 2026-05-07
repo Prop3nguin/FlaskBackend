@@ -1,5 +1,4 @@
 from flask import Flask, request, jsonify, session, redirect, render_template
-from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from functools import wraps
 import os
@@ -39,9 +38,7 @@ app.config["SQLALCHEMY_DATABASE_URI"] = uri
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # Restrict CORS to your GitHub Pages site
-CORS(
-    app
-)
+
 
 db = SQLAlchemy(app)
 
@@ -75,7 +72,11 @@ def require_admin(f):
 # -----------------------------
 @app.route("/")
 def home():
-    return "API is running"
+    return "API is running v0.15"
+
+@app.route("/", methods=["OPTIONS"])
+def options():
+    return make_response("", 200)
 
 @app.route("/test")
 def test():
