@@ -121,6 +121,12 @@ def delete_word(word_id):
     db.session.commit()
     return jsonify({"status": "deleted"})
 
+@app.route("/init-db")
+@require_auth
+def init_db():
+    db.create_all()
+    return jsonify({"status": "tables created"})
+
 @app.route("/syllables", methods=["GET"])
 def get_syllables():
     syls = Syllable.query.order_by(Syllable.use_count.desc()).all()
